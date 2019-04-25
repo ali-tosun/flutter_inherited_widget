@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() => runApp(MyApp());
 
@@ -22,22 +24,42 @@ class MyAppState extends State<MyApp> {
     number = 0;
   }
 
+  Future<String> myFuture() async {
+    var myJsonData =
+        await http.get("https://jsonplaceholder.typicode.com/posts/1");
+    var jsonMap = jsonDecode(myJsonData.body);
+    //debugPrint(jsonMap[0]['userId']);
+    return jsonMap['title'];
+  }
+
   @override
-  Widget build(BuildContext context) => NameManager(
-        name: "Ali",
-        child: MaterialApp(
-          theme: ThemeData(
-            primarySwatch: Colors.red,
-          ),
-          home: NumManager(
-              //home property sini Inherited widget ile sarmalıyoruz,böylece alt sınıflar bu değişkenlere istediği yerden ulaşabilecektir.
-              // bir widget ağacında aynı inherited widgeti kullanabiliriz, NumManager.of(context).callback şeklinde erişecek kişi
-              // kendisine en yakınındaki NumManager şeklinde tanımlanmış sınıfın değişkenlerine erişir.
-              number: number,
-              callback: numChangeCallback,
-              child: homeScreen()),
-        ),
-      );
+  Widget build(BuildContext context) {
+
+      return FutureBuilder(future: myFuture(),builder: (context,snapshat){
+
+        if(snapshat.connectionState == ConnectionState.done){
+          return  NameManager(
+            name: snapshat.data.toString(),
+            child: MaterialApp(
+              theme: ThemeData(
+                primarySwatch: Colors.red,
+              ),
+              home: NumManager(
+                //home property sini Inherited widget ile sarmalıyoruz,böylece alt sınıflar bu değişkenlere istediği yerden ulaşabilecektir.
+                // bir widget ağacında aynı inherited widgeti kullanabiliriz, NumManager.of(context).callback şeklinde erişecek kişi
+                // kendisine en yakınındaki NumManager şeklinde tanımlanmış sınıfın değişkenlerine erişir.
+                  number: number,
+                  callback: numChangeCallback,
+                  child: homeScreen()),
+            ),
+          );
+        }else{
+          return Center(child: CircularProgressIndicator(),);
+        }
+
+      });
+
+  }
 }
 
 class homeScreen extends StatefulWidget {
@@ -72,8 +94,7 @@ class _homeScreenState extends State<homeScreen> {
 class CenterWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-
-    debugPrint("ilk name manager"+NameManager.of(context).name);
+    debugPrint("ilk name manager" + NameManager.of(context).name);
 
     return NameManager(
       name: "Ali Tosun",
@@ -86,7 +107,8 @@ class CenterWidget extends StatelessWidget {
               onPressed: () {
                 var myFunction = NumManager.of(context).callback;
                 var myNumber = NumManager.of(context).number;
-                debugPrint("raised button name manager"+NameManager.of(context).name);
+                debugPrint("raised button name manager" +
+                    NameManager.of(context).name);
 
                 myFunction(--myNumber);
               },
@@ -102,7 +124,7 @@ class CenterWidget extends StatelessWidget {
 class TextWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    debugPrint("ikinci name manager"+NameManager.of(context).name);
+    debugPrint("ikinci name manager" + NameManager.of(context).name);
 
     int inheritedNumber = NumManager.of(context).number;
     String myName = NameManager.of(context).name;
